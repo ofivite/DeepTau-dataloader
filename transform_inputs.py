@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 import yaml
 import time
 import glob
+import gc
 from memory_profiler import profile
 
 ################################################################################################
@@ -109,6 +110,10 @@ def fill_tensor(path_to_data):
             # put them in the tensor
             grid_tensors[grid_type][i_tau, indices_eta, indices_phi, :] = values_to_fill
 
+    # release memory
+    for grid_type in grid_types:
+        del grid_tensors[grid_type]
+    gc.collect()
 ################################################################################################
 
 if __name__ == '__main__':
