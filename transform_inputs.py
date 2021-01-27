@@ -33,37 +33,6 @@ def get_fill_values(taus, i_tau, c_type, grid_mask):
     fill_values = taus[i_tau][fill_branches[c_type]][grid_mask]
     return fill_values
 
-################################################################################################
-
-# some tau info
-path_to_data = 'data/muon_*.root'
-tau_i = 7 # random tau index for illustrative purposes
-constituent_types = ['ele', 'muon', 'pfCand']
-fill_branches = {'ele': ['ele_pt', 'ele_deta', 'ele_dphi', 'ele_mass',],
-                 'muon': ['muon_pt', 'muon_deta', 'muon_dphi', 'muon_mass',],
-                 'pfCand': ['pfCand_pt', 'pfCand_deta', 'pfCand_dphi', 'pfCand_mass',]
-                 } # branches to be stored
-
-# defining grids
-grid_types = ['inner', 'outer']
-grid_dim = ['eta', 'phi']
-grid_size, grid_left, grid_right = {}, {}, {}
-
-n_cells = {'inner': 11, 'outer': 21}
-cell_size = {'inner': 0.02, 'outer': 0.05}
-
-for grid_type in grid_types:
-    grid_size[grid_type] = cell_size[grid_type] * n_cells[grid_type]
-    grid_left[grid_type], grid_right[grid_type] = - grid_size[grid_type] / 2, grid_size[grid_type] / 2
-
-# grid masks placeholder
-grid_mask_dict = {key: {} for key in grid_types}
-
-# initialize grid tensors dictionary
-grid_tensors = {}
-
-################################################################################################
-
 # @profile
 def fill_tensor(path_to_data):
     # get data
@@ -114,7 +83,35 @@ def fill_tensor(path_to_data):
     for grid_type in grid_types:
         del grid_tensors[grid_type]
     gc.collect()
+
 ################################################################################################
+
+# some tau info
+path_to_data = 'data/muon_*.root'
+tau_i = 7 # random tau index for illustrative purposes
+constituent_types = ['ele', 'muon', 'pfCand']
+fill_branches = {'ele': ['ele_pt', 'ele_deta', 'ele_dphi', 'ele_mass',],
+                 'muon': ['muon_pt', 'muon_deta', 'muon_dphi', 'muon_mass',],
+                 'pfCand': ['pfCand_pt', 'pfCand_deta', 'pfCand_dphi', 'pfCand_mass',]
+                 } # branches to be stored
+
+# defining grids
+grid_types = ['inner', 'outer']
+grid_dim = ['eta', 'phi']
+grid_size, grid_left, grid_right = {}, {}, {}
+
+n_cells = {'inner': 11, 'outer': 21}
+cell_size = {'inner': 0.02, 'outer': 0.05}
+
+for grid_type in grid_types:
+    grid_size[grid_type] = cell_size[grid_type] * n_cells[grid_type]
+    grid_left[grid_type], grid_right[grid_type] = - grid_size[grid_type] / 2, grid_size[grid_type] / 2
+
+# grid masks placeholder
+grid_mask_dict = {key: {} for key in grid_types}
+
+# initialize grid tensors dictionary
+grid_tensors = {}
 
 if __name__ == '__main__':
     fill_tensor(path_to_data)
