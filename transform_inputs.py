@@ -63,7 +63,7 @@ grid_tensors = {}
 
 ################################################################################################
 
-@profile
+# @profile
 def fill_tensor(path_to_data):
     # get data
     taus = get_data(path_to_data)
