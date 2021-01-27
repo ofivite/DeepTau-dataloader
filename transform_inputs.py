@@ -41,7 +41,10 @@ taus = get_data('data/muon_*.root')
 n_taus = len(taus)
 tau_i = 7 # random tau index for illustrative purposes
 constituent_types = ['ele', 'muon', 'pfCand']
-fill_branches = {'pfCand': ['pfCand_pt', 'pfCand_deta', 'pfCand_dphi', 'pfCand_mass',]} # branches to be stored
+fill_branches = {'ele': ['ele_pt', 'ele_deta', 'ele_dphi', 'ele_mass',],
+                 'muon': ['muon_pt', 'muon_deta', 'muon_dphi', 'muon_mass',],
+                 'pfCand': ['pfCand_pt', 'pfCand_deta', 'pfCand_dphi', 'pfCand_mass',]
+                 } # branches to be stored
 
 # defining grids
 grid_types = ['inner', 'outer']
