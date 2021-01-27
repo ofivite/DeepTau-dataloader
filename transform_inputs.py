@@ -36,7 +36,6 @@ def get_fill_values(i_tau, c_type, grid_mask):
 
 # some tau info
 path_to_data = 'data/muon_*.root'
-n_taus = len(taus)
 tau_i = 7 # random tau index for illustrative purposes
 constituent_types = ['ele', 'muon', 'pfCand']
 fill_branches = {'ele': ['ele_pt', 'ele_deta', 'ele_dphi', 'ele_mass',],
@@ -68,7 +67,8 @@ grid_tensors = {}
 def fill_tensor(path_to_data):
     # get data
     taus = get_data(path_to_data)
-
+    n_taus = len(taus)
+    
     # loop over constituent types
     for c_type in constituent_types:
         # counting number of constituents for each tau
