@@ -89,7 +89,8 @@ for c_type in constituent_types:
 
 # init grid tensors with 0
 c_type = 'pfCand'
-grid_tensors[grid_type] = np.zeros((n_taus, n_cells[grid_type], n_cells[grid_type], len(fill_branches[c_type])))
+for grid_type in grid_types:
+    grid_tensors[grid_type] = np.zeros((n_taus, n_cells[grid_type], n_cells[grid_type], len(fill_branches[c_type])))
 
 for i_tau, tau in enumerate(taus):
     for grid_type in grid_types:
