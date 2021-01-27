@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 import yaml
 import time
 import glob
-# from memory_profiler import profile
+from memory_profiler import profile
 
 ################################################################################################
 
@@ -34,10 +34,8 @@ def get_fill_values(i_tau, c_type, grid_mask):
 
 ################################################################################################
 
-# get data
-taus = get_data('data/muon_*.root')
-
 # some tau info
+path_to_data = 'data/muon_*.root'
 n_taus = len(taus)
 tau_i = 7 # random tau index for illustrative purposes
 constituent_types = ['ele', 'muon', 'pfCand']
@@ -66,42 +64,52 @@ grid_tensors = {}
 
 ################################################################################################
 
-# loop over constituent types
-for c_type in constituent_types:
-    # counting number of constituents for each tau
-    taus[f'n_{c_type}'] = ak.num(taus[f'{c_type}_pt'])
+@profile
+def fill_tensor(path_to_data):
+    # get data
+    taus = get_data(path_to_data)
 
-    # normalising constituent coordinates wrt. tau direction
-    for dim in ['phi', 'eta']:
-        taus[f'{c_type}_d{dim}'] = taus[f'{c_type}_{dim}'] - taus[f'tau_{dim}']
+    # loop over constituent types
+    for c_type in constituent_types:
+        # counting number of constituents for each tau
+        taus[f'n_{c_type}'] = ak.num(taus[f'{c_type}_pt'])
 
-    for grid_type in grid_types:
-        # deriving grid masks
-        grid_eta_mask = (taus[f'{c_type}_deta'] > grid_left[grid_type]) & (taus[f'{c_type}_deta'] < grid_right[grid_type])
-        grid_phi_mask = (taus[f'{c_type}_dphi'] > grid_left[grid_type]) & (taus[f'{c_type}_dphi'] < grid_right[grid_type])
-        grid_mask_dict[grid_type][c_type] = grid_eta_mask * grid_phi_mask
+        # normalising constituent coordinates wrt. tau direction
+        for dim in ['phi', 'eta']:
+            taus[f'{c_type}_d{dim}'] = taus[f'{c_type}_{dim}'] - taus[f'tau_{dim}']
 
-        # deriving cell indices
-        # do this by affine transforming the grid to an array of grid indices and then flooring to the nearest integer
-        for dim in grid_dim:
-            taus[f'{grid_type}_grid_{c_type}_indices_{dim}'] = np.floor((taus[f'{c_type}_d{dim}'] - grid_left[grid_type]) / grid_size[grid_type] * n_cells[grid_type])
+        for grid_type in grid_types:
+            # deriving grid masks
+            grid_eta_mask = (taus[f'{c_type}_deta'] > grid_left[grid_type]) & (taus[f'{c_type}_deta'] < grid_right[grid_type])
+            grid_phi_mask = (taus[f'{c_type}_dphi'] > grid_left[grid_type]) & (taus[f'{c_type}_dphi'] < grid_right[grid_type])
+            grid_mask_dict[grid_type][c_type] = grid_eta_mask * grid_phi_mask
 
-        # init grid tensors with 0
-        grid_tensors[grid_type] = np.zeros((n_taus, n_cells[grid_type], n_cells[grid_type], len(fill_branches[c_type])))
+            # deriving cell indices
+            # do this by affine transforming the grid to an array of grid indices and then flooring to the nearest integer
+            for dim in grid_dim:
+                taus[f'{grid_type}_grid_{c_type}_indices_{dim}'] = np.floor((taus[f'{c_type}_d{dim}'] - grid_left[grid_type]) / grid_size[grid_type] * n_cells[grid_type])
 
-    # store grid masks as branches
-    taus[f'inner_grid_{c_type}_mask'] = grid_mask_dict['inner'][c_type]
-    taus[f'outer_grid_{c_type}_mask'] = grid_mask_dict['outer'][c_type] * (~grid_mask_dict['inner'][c_type])
+            # init grid tensors with 0
+            grid_tensors[grid_type] = np.zeros((n_taus, n_cells[grid_type], n_cells[grid_type], len(fill_branches[c_type])))
 
-# so far filling only pfCand
-c_type = 'pfCand'
-for i_tau, tau in enumerate(taus):
-    for grid_type in grid_types:
-        grid_mask = get_grid_mask(i_tau, c_type, grid_type)
-        indices_eta, indices_phi = get_fill_indices(i_tau, c_type, grid_type, grid_mask)
-        indices_eta, indices_phi = ak.values_astype(indices_eta, 'int32'), ak.values_astype(indices_phi, 'int32')
-        values_to_fill = get_fill_values(i_tau, c_type, grid_mask)
-        values_to_fill = ak.to_pandas(values_to_fill).values
+        # store grid masks as branches
+        taus[f'inner_grid_{c_type}_mask'] = grid_mask_dict['inner'][c_type]
+        taus[f'outer_grid_{c_type}_mask'] = grid_mask_dict['outer'][c_type] * (~grid_mask_dict['inner'][c_type])
 
-        # put them in the tensor
-        grid_tensors[grid_type][i_tau, indices_eta, indices_phi, :] = values_to_fill
+    # so far filling only pfCand
+    c_type = 'pfCand'
+    for i_tau, tau in enumerate(taus):
+        for grid_type in grid_types:
+            grid_mask = get_grid_mask(i_tau, c_type, grid_type)
+            indices_eta, indices_phi = get_fill_indices(i_tau, c_type, grid_type, grid_mask)
+            indices_eta, indices_phi = ak.values_astype(indices_eta, 'int32'), ak.values_astype(indices_phi, 'int32')
+            values_to_fill = get_fill_values(i_tau, c_type, grid_mask)
+            values_to_fill = ak.to_pandas(values_to_fill).values
+
+            # put them in the tensor
+            grid_tensors[grid_type][i_tau, indices_eta, indices_phi, :] = values_to_fill
+
+################################################################################################
+
+if __name__ == '__main__':
+    fill_tensor(path_to_data)
