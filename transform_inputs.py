@@ -7,7 +7,7 @@ import pandas as pd
 import numba as nb
 import matplotlib.pyplot as plt
 
-import tensorflow as tf
+# import tensorflow as tf
 
 import yaml
 import time
@@ -58,10 +58,8 @@ for grid_type in grid_types:
 # grid masks placeholder
 grid_mask_dict = {key: {} for key in grid_types}
 
-# initialize grid tensors
+# initialize grid tensors dictionary
 grid_tensors = {}
-for grid_type in grid_types:
-    grid_tensors[grid_type] = np.zeros((n_taus, n_cells[grid_type], n_cells[grid_type], len(fill_branches[c_type])))
 
 ################################################################################################
 
@@ -74,19 +72,25 @@ for c_type in constituent_types:
     for dim in ['phi', 'eta']:
         taus[f'{c_type}_d{dim}'] = taus[f'{c_type}_{dim}'] - taus[f'tau_{dim}']
 
-    # deriving grid masks
     for grid_type in grid_types:
-        grid_eta_mask = (taus[f'{c_type}_deta'] > grid_left[grid_type]) & (taus[f'{c_type}_deta'] < grid_right[grid_type])
-        grid_phi_mask = (taus[f'{c_type}_dphi'] > grid_left[grid_type]) & (taus[f'{c_type}_dphi'] < grid_right[grid_type])
-        grid_mask_dict[grid_type][c_type] = grid_eta_mask * grid_phi_mask
-    taus[f'inner_grid_{c_type}_mask'] = grid_mask_dict['inner'][c_type]
-    taus[f'outer_grid_{c_type}_mask'] = grid_mask_dict['outer'][c_type] * (~grid_mask_dict['inner'][c_type])
+        # init grid tensors with 0
+        grid_tensors[grid_type] = np.zeros((n_taus, n_cells[grid_type], n_cells[grid_type], len(fill_branches[c_type])))
 
-    # deriving cell indices
-    # do this by affine transforming the grid to an array of grid indices and then flooring to the nearest integer
-    for grid_type in grid_types:
-        for dim in grid_dim:
-            taus[f'{grid_type}_grid_{c_type}_indices_{dim}'] = np.floor((taus[f'{c_type}_d{dim}'] - grid_left[grid_type]) / grid_size[grid_type] * n_cells[grid_type])
+        # deriving grid masks
+        for grid_type in grid_types:
+            grid_eta_mask = (taus[f'{c_type}_deta'] > grid_left[grid_type]) & (taus[f'{c_type}_deta'] < grid_right[grid_type])
+            grid_phi_mask = (taus[f'{c_type}_dphi'] > grid_left[grid_type]) & (taus[f'{c_type}_dphi'] < grid_right[grid_type])
+            grid_mask_dict[grid_type][c_type] = grid_eta_mask * grid_phi_mask
+
+            # deriving cell indices
+            # do this by affine transforming the grid to an array of grid indices and then flooring to the nearest integer
+            for dim in grid_dim:
+                taus[f'{grid_type}_grid_{c_type}_indices_{dim}'] = np.floor((taus[f'{c_type}_d{dim}'] - grid_left[grid_type]) / grid_size[grid_type] * n_cells[grid_type])
+
+        # store grid masks as branchesß
+        taus[f'inner_grid_{c_type}_mask'] = grid_mask_dict['inner'][c_type]
+        taus[f'outer_grid_{c_type}_mask'] = grid_mask_dict['outer'][c_type] * (~grid_mask_dict['inner'][c_type])
+
 
 c_type = 'pfCand'
 for i_tau, tau in enumerate(taus):
