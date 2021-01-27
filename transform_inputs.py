@@ -19,16 +19,16 @@ from memory_profiler import profile
 def get_data(path):
     return uproot.concatenate(f'{path}:taus', library='ak')
 
-def get_grid_mask(i_tau, c_type, grid_type):
+def get_grid_mask(taus, i_tau, c_type, grid_type):
     grid_mask = taus[i_tau][f'{grid_type}_grid_{c_type}_mask']
     return grid_mask
 
-def get_fill_indices(i_tau, c_type, grid_type, grid_mask):
+def get_fill_indices(taus, i_tau, c_type, grid_type, grid_mask):
     indices_eta = taus[i_tau][f'{grid_type}_grid_{c_type}_indices_eta'][grid_mask]
     indices_phi = taus[i_tau][f'{grid_type}_grid_{c_type}_indices_phi'][grid_mask]
     return indices_eta, indices_phi
 
-def get_fill_values(i_tau, c_type, grid_mask):
+def get_fill_values(taus, i_tau, c_type, grid_mask):
     fill_values = taus[i_tau][fill_branches[c_type]][grid_mask]
     return fill_values
 
@@ -68,7 +68,7 @@ def fill_tensor(path_to_data):
     # get data
     taus = get_data(path_to_data)
     n_taus = len(taus)
-    
+
     # loop over constituent types
     for c_type in constituent_types:
         # counting number of constituents for each tau
@@ -100,10 +100,10 @@ def fill_tensor(path_to_data):
     c_type = 'pfCand'
     for i_tau, tau in enumerate(taus):
         for grid_type in grid_types:
-            grid_mask = get_grid_mask(i_tau, c_type, grid_type)
-            indices_eta, indices_phi = get_fill_indices(i_tau, c_type, grid_type, grid_mask)
+            grid_mask = get_grid_mask(taus, i_tau, c_type, grid_type)
+            indices_eta, indices_phi = get_fill_indices(taus, i_tau, c_type, grid_type, grid_mask)
             indices_eta, indices_phi = ak.values_astype(indices_eta, 'int32'), ak.values_astype(indices_phi, 'int32')
-            values_to_fill = get_fill_values(i_tau, c_type, grid_mask)
+            values_to_fill = get_fill_values(taus, i_tau, c_type, grid_mask)
             values_to_fill = ak.to_pandas(values_to_fill).values
 
             # put them in the tensor
