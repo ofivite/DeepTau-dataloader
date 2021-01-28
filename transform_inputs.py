@@ -32,8 +32,8 @@ def derive_cell_indices(taus, c_type, grid_type, dim):
 
 ################################################################################################
 
-def get_data(path, tree_name):
-    taus = uproot.lazy(f'{path}:{tree_name}', step_size='1000 MB')
+def get_data(path, tree_name, step_size):
+    taus = uproot.lazy(f'{path}:{tree_name}', step_size=step_size)
     # taus = uproot.concatenate(f'{path}:{tree_name}', library='ak')
     return taus
 
@@ -43,22 +43,22 @@ def get_grid_mask(taus, i_tau, c_type, grid_type):
 def get_fill_indices(taus, i_tau, c_type, grid_type, grid_mask):
     indices_eta = taus[i_tau][f'{grid_type}_grid_{c_type}_indices_eta'][grid_mask]
     indices_phi = taus[i_tau][f'{grid_type}_grid_{c_type}_indices_phi'][grid_mask]
+    indices_eta, indices_phi = ak.values_astype(indices_eta, 'int32'), ak.values_astype(indices_phi, 'int32')
     return indices_eta, indices_phi
 
 def get_fill_values(taus, i_tau, branches, grid_mask):
-    return taus[i_tau][branches][grid_mask]
+    values_to_fill = taus[i_tau][branches][grid_mask]
+    return ak.to_pandas(values_to_fill).values
 
 ################################################################################################
 
 # @profile
-def fill_tensor(path_to_data):
+def fill_tensor(path_to_data, step_size):
     # initialize grid tensors dictionary
     grid_tensors = {key: {} for key in grid_types}
-
     # get data
-    taus = get_data(path_to_data, 'taus')
+    taus = get_data(path_to_data, 'taus', step_size)
     n_taus = len(taus)
-
     # loop over constituent types
     for c_type in constituent_types:
         add_vars_to_taus(taus, c_type)
@@ -70,8 +70,7 @@ def fill_tensor(path_to_data):
         taus[f'inner_grid_{c_type}_mask'] = grid_mask_dict['inner'][c_type]
         taus[f'outer_grid_{c_type}_mask'] = grid_mask_dict['outer'][c_type] * (~grid_mask_dict['inner'][c_type])
 
-    # so far filling only pfCand
-    c_type = 'pfCand'
+    # looping over taus
     for i_tau, _ in enumerate(taus):
         if i_tau%100 == 0:
             print(f'---> processing {i_tau}th tau')
@@ -81,21 +80,14 @@ def fill_tensor(path_to_data):
             for grid_type in grid_types:
                 # init grid tensors with 0
                 grid_tensors[grid_type][c_type] = np.zeros((n_taus, n_cells[grid_type], n_cells[grid_type], len(fill_branches[c_type])))
-
                 # fetch grid_mask
                 grid_mask = get_grid_mask(taus, i_tau, c_type, grid_type)
-
                 # fetch grid indices to be filled
                 indices_eta, indices_phi = get_fill_indices(taus, i_tau, c_type, grid_type, grid_mask)
-                indices_eta, indices_phi = ak.values_astype(indices_eta, 'int32'), ak.values_astype(indices_phi, 'int32')
-
                 # fetch values to be filled
                 values_to_fill = get_fill_values(taus, i_tau, fill_branches[c_type], grid_mask)
-                values_to_fill = ak.to_pandas(values_to_fill).values
-
                 # put them in the tensor
                 grid_tensors[grid_type][c_type][i_tau, indices_eta, indices_phi, :] = values_to_fill
-
     # release memory
     for c_type in constituent_types:
         for grid_type in grid_types:
@@ -129,5 +121,6 @@ grid_mask_dict = {key: {} for key in grid_types}
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Process some integers.')
     parser.add_argument('--path', action="store", dest="path_to_data", type=str)
+    parser.add_argument('--step', action="store", dest="step_size", type=int)
     args = parser.parse_args()
-    fill_tensor(args.path_to_data)
+    fill_tensor(args.path_to_data, args.step_size)
