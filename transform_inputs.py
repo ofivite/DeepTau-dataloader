@@ -70,6 +70,10 @@ def fill_tensor(path_to_data):
     # so far filling only pfCand
     c_type = 'pfCand'
     for i_tau, _ in enumerate(taus):
+            if i_tau%100 == 0:
+                print(f'---> processing {i_tau}th tau')
+            if i_tau == 10000:
+                break       
         for grid_type in grid_types:
             # init grid tensors with 0
             grid_tensors[grid_type] = np.zeros((n_taus, n_cells[grid_type], n_cells[grid_type], len(fill_branches[c_type])))
@@ -97,7 +101,6 @@ def fill_tensor(path_to_data):
 
 # some tau info
 path_to_data = 'data/muon_*.root'
-tau_i = 7 # random tau index for illustrative purposes
 constituent_types = ['ele', 'muon', 'pfCand']
 fill_branches = {'ele': ['ele_pt', 'ele_deta', 'ele_dphi', 'ele_mass',],
                  'muon': ['muon_pt', 'muon_deta', 'muon_dphi', 'muon_mass',],
