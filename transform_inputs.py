@@ -32,7 +32,9 @@ def derive_cell_indices(taus, c_type, grid_type, dim):
 ################################################################################################
 
 def get_data(path, tree_name):
-    return uproot.concatenate(f'{path}:{tree_name}', library='ak')
+    taus = uproot.lazy(f'{path}:{tree_name}', step_size='1000 MB')
+    # taus = uproot.concatenate(f'{path}:{tree_name}', library='ak')
+    return taus
 
 def get_grid_mask(taus, i_tau, c_type, grid_type):
     return taus[i_tau][f'{grid_type}_grid_{c_type}_mask']
@@ -73,7 +75,7 @@ def fill_tensor(path_to_data):
             if i_tau%100 == 0:
                 print(f'---> processing {i_tau}th tau')
             if i_tau == 10000:
-                break       
+                break
         for grid_type in grid_types:
             # init grid tensors with 0
             grid_tensors[grid_type] = np.zeros((n_taus, n_cells[grid_type], n_cells[grid_type], len(fill_branches[c_type])))
