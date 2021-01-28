@@ -11,6 +11,7 @@ import yaml
 import time
 import glob
 import gc
+import argparse
 from memory_profiler import profile
 
 ################################################################################################
@@ -125,4 +126,7 @@ for grid_type in grid_types:
 grid_mask_dict = {key: {} for key in grid_types}
 
 if __name__ == '__main__':
-    fill_tensor(path_to_data)
+    parser = argparse.ArgumentParser(description='Process some integers.')
+    parser.add_argument('--path', action="store", dest="path_to_data", type=str)
+    args = parser.parse_args()
+    fill_tensor(args.path_to_data)
