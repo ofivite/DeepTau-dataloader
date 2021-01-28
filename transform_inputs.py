@@ -53,7 +53,7 @@ def get_fill_values(taus, i_tau, branches, grid_mask):
 # @profile
 def fill_tensor(path_to_data):
     # initialize grid tensors dictionary
-    grid_tensors = {}
+    grid_tensors = {key: {} for key in grid_types}
 
     # get data
     taus = get_data(path_to_data, 'taus')
@@ -77,33 +77,34 @@ def fill_tensor(path_to_data):
             print(f'---> processing {i_tau}th tau')
         if i_tau == 10000:
             break
-        for grid_type in grid_types:
-            # init grid tensors with 0
-            grid_tensors[grid_type] = np.zeros((n_taus, n_cells[grid_type], n_cells[grid_type], len(fill_branches[c_type])))
+        for c_type in constituent_types:
+            for grid_type in grid_types:
+                # init grid tensors with 0
+                grid_tensors[grid_type][c_type] = np.zeros((n_taus, n_cells[grid_type], n_cells[grid_type], len(fill_branches[c_type])))
 
-            # fetch grid_mask
-            grid_mask = get_grid_mask(taus, i_tau, c_type, grid_type)
+                # fetch grid_mask
+                grid_mask = get_grid_mask(taus, i_tau, c_type, grid_type)
 
-            # fetch grid indices to be filled
-            indices_eta, indices_phi = get_fill_indices(taus, i_tau, c_type, grid_type, grid_mask)
-            indices_eta, indices_phi = ak.values_astype(indices_eta, 'int32'), ak.values_astype(indices_phi, 'int32')
+                # fetch grid indices to be filled
+                indices_eta, indices_phi = get_fill_indices(taus, i_tau, c_type, grid_type, grid_mask)
+                indices_eta, indices_phi = ak.values_astype(indices_eta, 'int32'), ak.values_astype(indices_phi, 'int32')
 
-            # fetch values to be filled
-            values_to_fill = get_fill_values(taus, i_tau, fill_branches[c_type], grid_mask)
-            values_to_fill = ak.to_pandas(values_to_fill).values
+                # fetch values to be filled
+                values_to_fill = get_fill_values(taus, i_tau, fill_branches[c_type], grid_mask)
+                values_to_fill = ak.to_pandas(values_to_fill).values
 
-            # put them in the tensor
-            grid_tensors[grid_type][i_tau, indices_eta, indices_phi, :] = values_to_fill
+                # put them in the tensor
+                grid_tensors[grid_type][c_type][i_tau, indices_eta, indices_phi, :] = values_to_fill
 
     # release memory
-    for grid_type in grid_types:
-        del grid_tensors[grid_type]
+    for c_type in constituent_types:
+        for grid_type in grid_types:
+            del grid_tensors[grid_type][c_type]
     gc.collect()
 
 ################################################################################################
 
-# some tau info
-path_to_data = 'data/muon_*.root'
+# constituent info
 constituent_types = ['ele', 'muon', 'pfCand']
 fill_branches = {'ele': ['ele_pt', 'ele_deta', 'ele_dphi', 'ele_mass',],
                  'muon': ['muon_pt', 'muon_deta', 'muon_dphi', 'muon_mass',],
