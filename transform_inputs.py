@@ -53,12 +53,13 @@ def get_fill_values(tau, branches, grid_mask):
 ################################################################################################
 
 # @profile
-def fill_tensor(path_to_data, step_size):
+def fill_tensor(path_to_data, step_size, n_taus):
     # initialize grid tensors dictionary
     grid_tensors = {key: {} for key in grid_types}
     # get data
     taus = get_data(path_to_data, 'taus', step_size)
-    n_taus = len(taus)
+    if n_taus < 0:
+        n_taus = len(taus)
     # loop over constituent types
     for c_type in constituent_types:
         add_vars_to_taus(taus, c_type)
@@ -74,8 +75,6 @@ def fill_tensor(path_to_data, step_size):
     for i_tau, tau in enumerate(taus):
         if i_tau%100 == 0:
             print(f'---> processing {i_tau}th tau')
-        if i_tau == 10000:
-            break
         for c_type in constituent_types:
             for grid_type in grid_types:
                 # init grid tensors with 0
@@ -121,6 +120,7 @@ grid_mask_dict = {key: {} for key in grid_types}
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Process some integers.')
     parser.add_argument('--path', action="store", dest="path_to_data", type=str)
-    parser.add_argument('--step', action="store", dest="step_size", type=int)
+    parser.add_argument('--step_size', action="store", dest="step_size", type=int)
+    parser.add_argument('--n_taus', action="store", dest="n_taus", type=int)
     args = parser.parse_args()
     fill_tensor(args.path_to_data, args.step_size)
