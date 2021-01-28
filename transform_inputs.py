@@ -73,10 +73,10 @@ def fill_tensor(path_to_data):
     # so far filling only pfCand
     c_type = 'pfCand'
     for i_tau, _ in enumerate(taus):
-            if i_tau%100 == 0:
-                print(f'---> processing {i_tau}th tau')
-            if i_tau == 10000:
-                break
+        if i_tau%100 == 0:
+            print(f'---> processing {i_tau}th tau')
+        if i_tau == 10000:
+            break
         for grid_type in grid_types:
             # init grid tensors with 0
             grid_tensors[grid_type] = np.zeros((n_taus, n_cells[grid_type], n_cells[grid_type], len(fill_branches[c_type])))
