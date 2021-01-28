@@ -123,4 +123,4 @@ if __name__ == '__main__':
     parser.add_argument('--step_size', action="store", dest="step_size", type=int)
     parser.add_argument('--n_taus', action="store", dest="n_taus", type=int)
     args = parser.parse_args()
-    fill_tensor(args.path_to_data, args.step_size)
+    fill_tensor(args.path_to_data, args.step_size, args.n_taus)
