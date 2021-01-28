@@ -37,17 +37,17 @@ def get_data(path, tree_name, step_size):
     # taus = uproot.concatenate(f'{path}:{tree_name}', library='ak')
     return taus
 
-def get_grid_mask(taus, i_tau, c_type, grid_type):
-    return taus[i_tau][f'{grid_type}_grid_{c_type}_mask']
+def get_grid_mask(tau, c_type, grid_type):
+    return tau[f'{grid_type}_grid_{c_type}_mask']
 
-def get_fill_indices(taus, i_tau, c_type, grid_type, grid_mask):
-    indices_eta = taus[i_tau][f'{grid_type}_grid_{c_type}_indices_eta'][grid_mask]
-    indices_phi = taus[i_tau][f'{grid_type}_grid_{c_type}_indices_phi'][grid_mask]
+def get_fill_indices(tau, c_type, grid_type, grid_mask):
+    indices_eta = tau[f'{grid_type}_grid_{c_type}_indices_eta'][grid_mask]
+    indices_phi = tau[f'{grid_type}_grid_{c_type}_indices_phi'][grid_mask]
     indices_eta, indices_phi = ak.values_astype(indices_eta, 'int32'), ak.values_astype(indices_phi, 'int32')
     return indices_eta, indices_phi
 
-def get_fill_values(taus, i_tau, branches, grid_mask):
-    values_to_fill = taus[i_tau][branches][grid_mask]
+def get_fill_values(tau, branches, grid_mask):
+    values_to_fill = tau[branches][grid_mask]
     return ak.to_pandas(values_to_fill).values
 
 ################################################################################################
@@ -71,7 +71,7 @@ def fill_tensor(path_to_data, step_size):
         taus[f'outer_grid_{c_type}_mask'] = grid_mask_dict['outer'][c_type] * (~grid_mask_dict['inner'][c_type])
 
     # looping over taus
-    for i_tau, _ in enumerate(taus):
+    for i_tau, tau in enumerate(taus):
         if i_tau%100 == 0:
             print(f'---> processing {i_tau}th tau')
         if i_tau == 10000:
@@ -81,11 +81,11 @@ def fill_tensor(path_to_data, step_size):
                 # init grid tensors with 0
                 grid_tensors[grid_type][c_type] = np.zeros((n_taus, n_cells[grid_type], n_cells[grid_type], len(fill_branches[c_type])))
                 # fetch grid_mask
-                grid_mask = get_grid_mask(taus, i_tau, c_type, grid_type)
+                grid_mask = get_grid_mask(tau, c_type, grid_type)
                 # fetch grid indices to be filled
-                indices_eta, indices_phi = get_fill_indices(taus, i_tau, c_type, grid_type, grid_mask)
+                indices_eta, indices_phi = get_fill_indices(tau, c_type, grid_type, grid_mask)
                 # fetch values to be filled
-                values_to_fill = get_fill_values(taus, i_tau, fill_branches[c_type], grid_mask)
+                values_to_fill = get_fill_values(tau, fill_branches[c_type], grid_mask)
                 # put them in the tensor
                 grid_tensors[grid_type][c_type][i_tau, indices_eta, indices_phi, :] = values_to_fill
     # release memory
