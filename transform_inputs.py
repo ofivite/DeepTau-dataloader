@@ -72,7 +72,7 @@ def fill_tensor(path_to_data, step_size, n_taus):
         taus[f'outer_grid_{c_type}_mask'] = grid_mask_dict['outer'][c_type] * (~grid_mask_dict['inner'][c_type])
 
     # looping over taus
-    for i_tau, tau in enumerate(taus):
+    for i_tau, tau in enumerate(taus[:n_taus]):
         if i_tau%100 == 0:
             print(f'---> processing {i_tau}th tau')
         for c_type in constituent_types:
