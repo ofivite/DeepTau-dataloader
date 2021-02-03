@@ -183,9 +183,9 @@ def get_fill_indices(taus, c_type, grid_type, grid_mask):
     return indices_eta, indices_phi
 
 def get_fill_values(tau, c_type, branches, grid_mask):
-    c_values = ak.to_numpy(tau[c_type, branches][grid_mask])
+    values_to_fill = ak.to_numpy(tau[c_type, branches][grid_mask]).tolist()
     # values_to_fill = np.apply_along_axis(lambda v: list(v), 0, values_to_fill)
-    values_to_fill = [list(v) for v in c_values]
+    # values_to_fill = [list(v) for v in values_to_fill]
     return values_to_fill
 
 ################################################################################################
