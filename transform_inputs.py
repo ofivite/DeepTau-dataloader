@@ -11,7 +11,7 @@ import gc
 import argparse
 from memory_profiler import profile
 
-from utils import add_vars_to_taus, get_batch_yielder
+from utils import add_vars_to_taus, sort_constituents_by_var, get_batch_yielder, derive_grid_mask
 
 ################################################################################################
 
@@ -147,18 +147,25 @@ for grid_type in grid_types:
 ################################################################################################
 
 @nb.njit
-def fill_feature_tensor(tensor_to_fill, i_feature, taus_feature,
-                        c_deta, c_dphi, grid_left, grid_right, cell_size):
+def fill_feature_tensor(tensor_to_fill, i_feature, taus_feature, c_deta, c_dphi, grid_type,
+                        inner_grid_left, inner_grid_right, inner_cell_size,
+                        outer_grid_left, outer_grid_right, outer_cell_size):
     """
     For a single-feature batch `taus_feature`
     loop over all taus and constituents wherein,
     derive indices on the grid (if fall onto the grid area)
     and fill the final tensor `tensor_to_fill`
     """
+    if grid_type == 'inner':
+        grid_left, grid_right, cell_size = inner_grid_left, inner_grid_right, inner_cell_size
+    elif grid_type == 'outer':
+        grid_left, grid_right, cell_size = outer_grid_left, outer_grid_right, outer_cell_size
+    else:
+        raise ValueError("grid_type should be either 'inner' or 'outer'")
     for i_tau in range(len(taus_feature)):
         for i_const in range(len(taus_feature[i_tau])):
-            mask = (c_deta[i_tau][i_const] > grid_left) & (c_deta[i_tau][i_const] < grid_right)
-            mask *= (c_dphi[i_tau][i_const] > grid_left) & (c_dphi[i_tau][i_const] < grid_right)
+            mask = derive_grid_mask(c_deta[i_tau][i_const], c_dphi[i_tau][i_const], grid_type,
+                                    inner_grid_left, inner_grid_right, outer_grid_left, outer_grid_right)
             if mask:
                 i_eta = np.int(np.floor((c_deta[i_tau][i_const] - grid_left) / cell_size))
                 i_phi = np.int(np.floor((c_dphi[i_tau][i_const] - grid_left) / cell_size))
@@ -169,7 +176,7 @@ def fill_tensor(path_to_data, batch_size, n_batches):
     """
     Main function which loops over
     batches of taus -> types of constituents -> types of grid ->  feature list
-    and fill the output tensor via `fill_feature_tensor()`
+    and fills the output tensor via `fill_feature_tensor()`
     """
     grid_tensors = {key: {} for key in grid_types} # dictionary to store final tensors
     batch_yielder = get_batch_yielder(path_to_data, 'taus', batch_size)
@@ -179,14 +186,15 @@ def fill_tensor(path_to_data, batch_size, n_batches):
         for c_type in constituent_types:
             print(f'\n  {c_type} constituents')
             add_vars_to_taus(taus, c_type) # at the moment minor preprocessing and feature engineering
+            sort_constituents_by_var(taus, c_type, 'pt', ascending=True)
             for grid_type in grid_types:
                 print(f'      {grid_type} grid')
                 grid_tensors[grid_type][c_type] = np.zeros((batch_size, n_cells[grid_type], n_cells[grid_type], len(fill_branches[c_type])))
                 for i_feature, feature in enumerate(fill_branches[c_type]):
-                        fill_feature_tensor(grid_tensors[grid_type][c_type], i_feature, taus[c_type, feature],
-                                            taus[c_type, 'deta'], taus[c_type, 'dphi'],
-                                            grid_left[grid_type], grid_right[grid_type], cell_size[grid_type])
-                grid_tensors[grid_type][c_type][:, 8:13, 8:13, :] = 0 # at the moment bad way of inner grid masking
+                    fill_feature_tensor(grid_tensors[grid_type][c_type], i_feature, taus[c_type, feature],
+                                        taus[c_type, 'deta'], taus[c_type, 'dphi'], grid_type,
+                                        grid_left['inner'], grid_right['inner'], cell_size['inner'],
+                                        grid_left['outer'], grid_right['outer'], cell_size['outer'])
         if (i_batch == n_batches - 1) and (n_batches > 0):
             break
 
