@@ -3,71 +3,70 @@
 ###   var_name: [selection, {aliase_name: "alias_definition"}] <--- e.g. ele_rel_pt: [null, {ele_rel_pt: 'ele_pt/tau_pt'}]
 
 # definitions
-file_path: 'data/ShuffleMergeSpectral*.root'
-file_range: [0, 50] # range in sorted file list
-tree_name: taus
-log_step: 10
-version: 0
+setup:
+  file_path: 'data/ShuffleMergeSpectral*.root'
+  file_range: [0, 5] # range in sorted file list
+  tree_name: taus
+  log_step: 1
+  version: 0
 
-# aliases for selection cuts
-selection:
-  - &tau_dxy_valid '(tau_dxy > -10) & (tau_dxy_error > 0)'
-  - &tau_dz_sig_valid 'tau_dz_error > 0'
-  - &tau_ip3d_valid '(tau_ip3d > - 10) & (tau_ip3d_error > 0)'
-  - &is_neutralHadron 'abs(pfCand_pdgId) == 130'
+  # aliases for selection cuts
+  selection:
+    - &tau_dxy_valid '(tau_dxy > -10) & (tau_dxy_error > 0)'
+    - &tau_dz_sig_valid 'tau_dz_error > 0'
+    - &tau_ip3d_valid '(tau_ip3d > - 10) & (tau_ip3d_error > 0)'
+    - &is_neutralHadron 'abs(pfCand_pdgId) == 130'
 
-# definition of selection specific to a grid type
-grid_selection:
+  # definition of selection specific to a grid type
+  grid_selection:
+    global:
+      inner: True
+      outer: True
+    ele:
+      inner: '(abs(ele_eta - tau_eta) < 0.11) & (abs(ele_phi - tau_phi) < 0.11)'
+      outer: '(abs(ele_eta - tau_eta) < 0.525) & (abs(ele_phi - tau_phi) < 0.525) & ~((abs(ele_eta - tau_eta) < 0.11) & (abs(ele_phi - tau_phi) < 0.11))'
+    PfCand_neutralHadron:
+      inner: '(abs(pfCand_eta - tau_eta) < 0.11) & (abs(pfCand_phi - tau_phi) < 0.11)'
+      outer: '(abs(pfCand_eta - tau_eta) < 0.525) & (abs(pfCand_phi - tau_phi) < 0.525) & ~((abs(pfCand_eta - tau_eta) < 0.11) & (abs(pfCand_phi - tau_phi) < 0.11))'
+
+features:
   global:
-    inner: True
-    outer: True
+    npv: [null, null]
+    rho: [null, null]
+    pv_x: [null, null]
+    pv_y: [null, null]
+    pv_z: [null, null]
+    pv_chi2: [null, null]
+    pv_ndof: [null, null]
+
+    tau_mass: [null, null]
+    chargedIsoPtSum: [null, null]
+    footprintCorrection: [null, null]
+    neutralIsoPtSum: [null, null]
+    photonPtSumOutsideSignalCone: [null, null]
+    puCorrPtSum: [null, null]
+
+    tau_dxy_pca_x: [null, null]
+    tau_dxy_pca_y: [null, null]
+    tau_dxy_pca_z: [null, null]
+    tau_dxy: [*tau_dxy_valid, null]
+    tau_dxy_sig: [*tau_dxy_valid, {'tau_dxy_sig': 'abs(tau_dxy)/tau_dxy_error'}]
+    tau_dz: [null, null]
+    tau_dz_sig: [*tau_dz_sig_valid, {'tau_dz_sig': 'abs(tau_dz)/tau_dz_error'}]
+    tau_ip3d: [*tau_ip3d_valid, null]
+    tau_ip3d_sig: [*tau_ip3d_valid, {'tau_ip3d_sig': 'abs(tau_ip3d)/tau_ip3d_error'}]
+
+    tau_flightLength_x: [null, null]
+    tau_flightLength_y: [null, null]
+    tau_flightLength_z: [null, null]
+    tau_flightLength_sig: [null, null]
+    tau_pt_weighted_dr_signal: [null, null]
+    tau_leadingTrackNormChi2: [null, null]
+    tau_n_photons: [null, null]
+    leadChargedCand_etaAtEcalEntrance_minus_tau_eta: [null, {'leadChargedCand_etaAtEcalEntrance_minus_tau_eta': 'leadChargedCand_etaAtEcalEntrance - tau_eta'}]
+
   ele:
-    inner: '(abs(ele_eta - tau_eta) < 0.11) & (abs(ele_phi - tau_phi) < 0.11)'
-    outer: '(abs(ele_eta - tau_eta) < 0.525) & (abs(ele_phi - tau_phi) < 0.525) & ~((abs(ele_eta - tau_eta) < 0.11) & (abs(ele_phi - tau_phi) < 0.11))'
+    ele_rel_pt: [null, {ele_rel_pt: 'ele_pt/tau_pt'}]
+
   PfCand_neutralHadron:
-    inner: '(abs(pfCand_eta - tau_eta) < 0.11) & (abs(pfCand_phi - tau_phi) < 0.11)'
-    outer: '(abs(pfCand_eta - tau_eta) < 0.525) & (abs(pfCand_phi - tau_phi) < 0.525) & ~((abs(pfCand_eta - tau_eta) < 0.11) & (abs(pfCand_phi - tau_phi) < 0.11))'
-
-# global features
-global:
-  npv: [null, null]
-  rho: [null, null]
-  pv_x: [null, null]
-  pv_y: [null, null]
-  pv_z: [null, null]
-  pv_chi2: [null, null]
-  pv_ndof: [null, null]
-
-  tau_mass: [null, null]
-  chargedIsoPtSum: [null, null]
-  footprintCorrection: [null, null]
-  neutralIsoPtSum: [null, null]
-  photonPtSumOutsideSignalCone: [null, null]
-  puCorrPtSum: [null, null]
-
-  tau_dxy_pca_x: [null, null]
-  tau_dxy_pca_y: [null, null]
-  tau_dxy_pca_z: [null, null]
-  tau_dxy: [*tau_dxy_valid, null]
-  tau_dxy_sig: [*tau_dxy_valid, {'tau_dxy_sig': 'abs(tau_dxy)/tau_dxy_error'}]
-  tau_dz: [null, null]
-  tau_dz_sig: [*tau_dz_sig_valid, {'tau_dz_sig': 'abs(tau_dz)/tau_dz_error'}]
-  tau_ip3d: [*tau_ip3d_valid, null]
-  tau_ip3d_sig: [*tau_ip3d_valid, {'tau_ip3d_sig': 'abs(tau_ip3d)/tau_ip3d_error'}]
-
-  tau_flightLength_x: [null, null]
-  tau_flightLength_y: [null, null]
-  tau_flightLength_z: [null, null]
-  tau_flightLength_sig: [null, null]
-  tau_pt_weighted_dr_signal: [null, null]
-  tau_leadingTrackNormChi2: [null, null]
-  tau_n_photons: [null, null]
-  leadChargedCand_etaAtEcalEntrance_minus_tau_eta: [null, {'leadChargedCand_etaAtEcalEntrance_minus_tau_eta': 'leadChargedCand_etaAtEcalEntrance - tau_eta'}]
-
-# electron features
-ele:
-  ele_rel_pt: [null, {ele_rel_pt: 'ele_pt/tau_pt'}]
-
-# neutral hadrons
-PfCand_neutralHadron:
-  pfCand_nHad_rel_pt: [*is_neutralHadron, {pfCand_nHad_rel_pt: 'pfCand_pt/tau_pt'}]
+    pfCand_nHad_rel_pt: [*is_neutralHadron, {pfCand_nHad_rel_pt: 'pfCand_pt/tau_pt'}]

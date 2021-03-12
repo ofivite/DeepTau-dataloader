@@ -4,6 +4,7 @@ import numpy as np
 
 import time
 import gc
+import argparse
 import yaml
 import json
 import collections
@@ -41,12 +42,12 @@ def compute_std(sums, sums2, counts, aggregate=True, *file_range):
     else:
         return np.sqrt(sums2/counts - (sums/counts)**2)
 
-def compute_scaling(file_name, file_i, tree_name, scaling_dict, grid_selection_dict, sums, sums2, counts, means_stds, log_step, version):
+def compute_scaling(file_name, file_i, tree_name, features_dict, grid_selection_dict, sums, sums2, counts, means_stds, log_step, version):
     with uproot.open(file_name, array_cache='5 GB') as f:
         if len(f.keys()) == 0:
             return 0
         else:
-            for var_type, var_dict in scaling_dict.items():
+            for var_type, var_dict in features_dict.items():
                 for var, (selection, aliases) in var_dict.items():
                     for grid_type, grid_cut in grid_selection_dict[var_type].items():
                         if selection == None:
@@ -74,17 +75,22 @@ def compute_scaling(file_name, file_i, tree_name, scaling_dict, grid_selection_d
 ########################################################################
 
 if __name__ == '__main__':
-    with open('scaling_definitions.yml') as f:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("cfg", type=str, help="path to yaml configuration file")
+    args = parser.parse_args()
+    with open(args.cfg) as f:
         scaling_dict = yaml.load(f, Loader=yaml.FullLoader)
 
     # read cfg parameters
-    file_path = scaling_dict.pop('file_path')
-    file_range = scaling_dict.pop('file_range')
-    tree_name = scaling_dict.pop('tree_name')
-    log_step = scaling_dict.pop('log_step')
-    version = scaling_dict.pop('version')
-    selection_dict = scaling_dict.pop('selection')
-    grid_selection_dict = scaling_dict.pop('grid_selection')
+    setup_dict = scaling_dict['setup']
+    features_dict = scaling_dict['features']
+    file_path = setup_dict['file_path']
+    file_range = setup_dict['file_range']
+    tree_name = setup_dict['tree_name']
+    log_step = setup_dict['log_step']
+    version = setup_dict['version']
+    selection_dict = setup_dict['selection']
+    grid_selection_dict = setup_dict['grid_selection']
     assert log_step > 0 and type(log_step) == int
     assert len(file_range)==2 and file_range[0]<=file_range[1]
     file_names = sorted(glob(file_path))[file_range[0]:file_range[1]]
@@ -93,7 +99,7 @@ if __name__ == '__main__':
 
     # initialize sums and counts
     sums, sums2, counts, means_stds = nested_dict(), nested_dict(), nested_dict(), nested_dict()
-    for var_type, var_dict in scaling_dict.items():
+    for var_type, var_dict in features_dict.items():
         for var in var_dict.keys():
             for grid_type in grid_selection_dict[var_type].keys():
                 sums[var_type][var][grid_type] = np.zeros(len(file_names), dtype='float64')
@@ -105,7 +111,7 @@ if __name__ == '__main__':
     last_file_done = program_starts
     # loop over input files
     for file_i, file_name in enumerate(file_names):
-        scaling_status = compute_scaling(file_name, file_i, tree_name, scaling_dict, grid_selection_dict, sums, sums2, counts, means_stds, log_step, version)
+        scaling_status = compute_scaling(file_name, file_i, tree_name, features_dict, grid_selection_dict, sums, sums2, counts, means_stds, log_step, version)
         gc.collect()
         if scaling_status == 0: # there is no objects in the file
             print(f'[WARNING] couldn\'t find any object in {file_name}: skipping the file')
@@ -117,7 +123,7 @@ if __name__ == '__main__':
             print(f'---> processed {file_name} in {processed_file - last_file_done:.2f} s')
             last_file_done = processed_file
     # calculate scaling parameters from the final sums/sums2/counts dicts
-    for var_type, var_dict in scaling_dict.items():
+    for var_type, var_dict in features_dict.items():
         for var in var_dict.keys():
             for grid_type in grid_selection_dict[var_type].keys():
                 mean = compute_mean(sums[var_type][var][grid_type], counts[var_type][var][grid_type], aggregate=True)
@@ -127,4 +133,5 @@ if __name__ == '__main__':
     with open(f'output/means_stds_v{version}.json', 'w') as fout:
         json.dump(means_stds, fout)
         print(f'saved the scaling parameters to: output/means_stds_v{version}.json')
-    print(f'[WARNING] during the processing {skip_counter} files with no objects were skipped ')
+    if skip_counter > 0:
+        print(f'[WARNING] during the processing {skip_counter} files with no objects were skipped ')
