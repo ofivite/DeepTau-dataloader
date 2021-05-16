@@ -1,0 +1,126 @@
+grid_types: [inner, outer]
+n_cells:
+  inner: 11
+  outer: 21
+cell_size:
+  inner: 0.02
+  outer: 0.05
+
+# type of particle constituents to be considered
+constituent_types: [ele, muon, pfCand]
+
+# branches to be store in the final tensor
+fill_branches:
+  ele:
+    - pt
+    - eta
+    - phi
+    - mass
+    - cc_ele_energy
+    - cc_gamma_energy
+    - cc_n_gamma
+    - dxy
+    - dxy_error
+    - ip3d
+    - trackMomentumAtVtx
+    - trackMomentumAtCalo
+    - trackMomentumOut
+    - trackMomentumAtEleClus
+    - trackMomentumAtVtxWithConstraint
+    - ecalEnergy
+    - ecalEnergy_error
+    - eSuperClusterOverP
+    - eSeedClusterOverP
+    - eSeedClusterOverPout
+    - eEleClusterOverPout
+    - deltaEtaSuperClusterTrackAtVtx
+    - deltaEtaSeedClusterTrackAtCalo
+    - deltaEtaEleClusterTrackAtCalo
+    - deltaEtaSeedClusterTrackAtVtx
+    - deltaPhiEleClusterTrackAtCalo
+    - deltaPhiSuperClusterTrackAtVtx
+    - deltaPhiSeedClusterTrackAtCalo
+    - mvaInput_earlyBrem
+    - mvaInput_lateBrem
+    - mvaInput_sigmaEtaEta
+    - mvaInput_hadEnergy
+    - mvaInput_deltaEta
+    - gsfTrack_normalizedChi2
+    - gsfTrack_numberOfValidHits
+    - gsfTrack_pt
+    - gsfTrack_pt_error
+
+  muon:
+    - pt
+    - eta
+    - phi
+    - mass
+    - dxy
+    - dxy_error
+    - normalizedChi2
+    - numberOfValidHits
+    - segmentCompatibility
+    - caloCompatibility
+    - pfEcalEnergy
+    - type
+    - n_matches_DT_1
+    - n_matches_DT_2
+    - n_matches_DT_3
+    - n_matches_DT_4
+    - n_matches_CSC_1
+    - n_matches_CSC_2
+    - n_matches_CSC_3
+    - n_matches_CSC_4
+    - n_matches_RPC_1
+    - n_matches_RPC_2
+    - n_matches_RPC_3
+    - n_matches_RPC_4
+    - n_matches_GEM_1
+    - n_matches_GEM_2
+    - n_matches_GEM_3
+    - n_matches_GEM_4
+    - n_matches_ME0_1
+    - n_matches_ME0_2
+    - n_matches_ME0_3
+    - n_matches_ME0_4
+    - n_hits_DT_1
+    - n_hits_DT_2
+    - n_hits_DT_3
+    - n_hits_DT_4
+    - n_hits_CSC_1
+
+  pfCand:
+    - jetDaughter
+    - tauSignal
+    - leadChargedHadrCand
+    - tauIso
+    - pt
+    - eta
+    - phi
+    - mass
+    - pvAssociationQuality
+    - fromPV
+    - puppiWeight
+    - puppiWeightNoLep
+    - pdgId
+    - charge
+    - lostInnerHits
+    - numberOfPixelHits
+    - numberOfHits
+    - vertex_x
+    - vertex_y
+    - vertex_z
+    - vertex_t
+    - time
+    - timeError
+    - hasTrackDetails
+    - dxy
+    - dxy_error
+    - dz
+    - dz_error
+    - track_chi2
+    - track_ndof
+    - caloFraction
+    - hcalFraction
+    - rawCaloFraction
+    - rawHcalFraction
