@@ -86,7 +86,7 @@ def fill_feature_tensor(tensor_to_fill, i_feature, taus_feature, c_deta, c_dphi,
                 tensor_to_fill[i_tau, i_eta, i_phi, i_feature] = taus_feature[i_tau][i_const]
 
 # @profile
-def fill_tensor(file_name, batch_size, constituent_types, fill_branches, grid_types, n_cells, cell_size):
+def fill_tensor(file_name, batch_size, n_batches, constituent_types, fill_branches, grid_types, n_cells, cell_size):
     """
     Main function which loops over
     batches of taus -> types of constituents -> types of grid ->  feature list
@@ -105,7 +105,7 @@ def fill_tensor(file_name, batch_size, constituent_types, fill_branches, grid_ty
         for c_type in constituent_types:
             print(f'\n  {c_type} constituents')
             add_vars(taus, c_type) # at the moment minor preprocessing and feature engineering
-            sort_constituents_by_var(taus, c_type, 'pt', ascending=True) # sort so that in case of multiple cell entries the highest pt candidate is filled  
+            sort_constituents_by_var(taus, c_type, 'pt', ascending=True) # sort so that in case of multiple cell entries the highest pt candidate is filled
             for grid_type in grid_types:
                 print(f'      {grid_type} grid')
                 grid_tensors[grid_type][c_type] = np.zeros((batch_size, n_cells[grid_type], n_cells[grid_type], len(fill_branches[c_type])))
@@ -114,4 +114,6 @@ def fill_tensor(file_name, batch_size, constituent_types, fill_branches, grid_ty
                                         taus[c_type, 'deta'], taus[c_type, 'dphi'], grid_type,
                                         grid_left['inner'], grid_right['inner'], cell_size['inner'],
                                         grid_left['outer'], grid_right['outer'], cell_size['outer'])
+        if (i_batch == n_batches-1) and (n_batches > 0):
+            break
     return grid_tensors

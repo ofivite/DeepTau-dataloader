@@ -22,8 +22,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', "--cfg", type=str, help="Path to yaml configuration file")
     parser.add_argument('-d', '--data', type=str, help="Path to directory with input ROOT files")
-    parser.add_argument('-n', '--n_files', type=int, default=1, help="Number of (first n after sorting) files to process from input data folder")
-    parser.add_argument('-b', '--batch_size', type=int, default=1000, help="Number of tau tensors to be placed in one batch")
+    parser.add_argument('--n_files', type=int, default=1, help="Number of (first n after sorting) files to process from input data folder")
+    parser.add_argument('--n_batches', type=int, default=10, help="Number of batches to create (for each file) and then terminate the program")
+    parser.add_argument('--batch_size', type=int, default=1000, help="Number of tau tensors to be placed in one batch")
     args = parser.parse_args()
     with open(args.cfg) as f:
         input_cfg = yaml.load(f, Loader=yaml.FullLoader)
@@ -38,7 +39,7 @@ if __name__ == '__main__':
     file_names = sorted(glob(f'{args.data}/*.root'))[:args.n_files]
     for file_name in file_names:
         # get filled tensor
-        grid_tensors = fill_tensor(file_name, args.batch_size, constituent_types, fill_branches, grid_types, n_cells, cell_size)
+        grid_tensors = fill_tensor(file_name, args.batch_size, args.n_batches, constituent_types, fill_branches, grid_types, n_cells, cell_size)
         # release memory
         for c_type in constituent_types:
             for grid_type in grid_types:
