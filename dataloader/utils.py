@@ -12,12 +12,18 @@ from memory_profiler import profile
 ################################################################################################
 
 def add_vars(taus, c_type):
+    """
+    Add variables to `taus` array for a given constituent type `c_type`
+    """
     taus[f'n_{c_type}'] = ak.num(taus[c_type]) # counting number of constituents for each tau
     for dim in ['phi', 'eta']:
         taus[c_type, f'd{dim}'] = taus[c_type, dim] - taus[f'tau_{dim}'] # normalising constituent coordinates wrt. tau direction
 
 @nb.njit
 def derive_grid_mask(deta, dphi, grid_type, inner_grid_left, inner_grid_right, outer_grid_left, outer_grid_right):
+    """
+    Derive a bool mask to belong to a given grid_type for constituents, which direction of flight is described by `deta` and `dphi`
+    """
     inner_mask = (deta > inner_grid_left) & (deta < inner_grid_right)
     inner_mask *= (dphi > inner_grid_left) & (dphi < inner_grid_right)
     if grid_type == 'inner':
@@ -37,18 +43,22 @@ def derive_cell_indices(taus, c_type, grid_left, cell_size, dim):
 def sort_constituents_by_var(taus, c_type, var, ascending=True):
     """
     Sort constituents in array `taus[c_type]`` inplace according to the values of `var`.
-    Filling function `fill_feature_tensor()` in case of multiple cell entries
-    fills the last constituent in a row, which after calling this function would be the one with the highest `val`.
+    This transformation is needed for `fill_feature_tensor()` to resolve the case of multiple cell entries,
+    where the highest pt candidate needs to be filled into the grid cell.
     """
     idx = ak.argsort(taus[c_type][var], ascending=ascending)
     taus[c_type] = taus[c_type][idx]
 
 def get_batch_yielder(file_name, tree_name, step_size):
+    """
+    Return an iterator over chunks of the given file with a specified `step_size`
+    (can be either number of entries or memory size, see `uproot` documentation for details)
+    """
     f = uproot.open(file_name)
-    batch_yielder = f[tree_name].iterate(library="ak", step_size=step_size, how="zip")
+    batch_yielder = f[tree_name].iterate(library="ak", step_size=step_size, how="zip") # zip combines together features for the same constituent type
     return batch_yielder
 
-################################################################################################
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 @nb.njit
 def fill_feature_tensor(tensor_to_fill, i_feature, taus_feature, c_deta, c_dphi, grid_type,
@@ -56,7 +66,7 @@ def fill_feature_tensor(tensor_to_fill, i_feature, taus_feature, c_deta, c_dphi,
                         outer_grid_left, outer_grid_right, outer_cell_size):
     """
     For a single-feature batch `taus_feature`
-    loop over all taus and constituents wherein,
+    loop over all taus and constituents therein,
     derive indices on the grid (if fall onto the grid area)
     and fill the final tensor `tensor_to_fill`
     """
@@ -71,7 +81,7 @@ def fill_feature_tensor(tensor_to_fill, i_feature, taus_feature, c_deta, c_dphi,
             mask = derive_grid_mask(c_deta[i_tau][i_const], c_dphi[i_tau][i_const], grid_type,
                                     inner_grid_left, inner_grid_right, outer_grid_left, outer_grid_right)
             if mask:
-                i_eta = np.int(np.floor((c_deta[i_tau][i_const] - grid_left) / cell_size))
+                i_eta = np.int(np.floor((c_deta[i_tau][i_const] - grid_left) / cell_size)) # affine transformation to derive indices in the grid tensor
                 i_phi = np.int(np.floor((c_dphi[i_tau][i_const] - grid_left) / cell_size))
                 tensor_to_fill[i_tau, i_eta, i_phi, i_feature] = taus_feature[i_tau][i_const]
 
@@ -95,7 +105,7 @@ def fill_tensor(file_name, batch_size, constituent_types, fill_branches, grid_ty
         for c_type in constituent_types:
             print(f'\n  {c_type} constituents')
             add_vars(taus, c_type) # at the moment minor preprocessing and feature engineering
-            sort_constituents_by_var(taus, c_type, 'pt', ascending=True)
+            sort_constituents_by_var(taus, c_type, 'pt', ascending=True) # sort so that in case of multiple cell entries the highest pt candidate is filled  
             for grid_type in grid_types:
                 print(f'      {grid_type} grid')
                 grid_tensors[grid_type][c_type] = np.zeros((batch_size, n_cells[grid_type], n_cells[grid_type], len(fill_branches[c_type])))
