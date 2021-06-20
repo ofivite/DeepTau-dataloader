@@ -11,15 +11,10 @@ from memory_profiler import profile
 
 ################################################################################################
 
-def add_vars_to_taus(taus, c_type):
+def add_vars(taus, c_type):
     taus[f'n_{c_type}'] = ak.num(taus[c_type]) # counting number of constituents for each tau
     for dim in ['phi', 'eta']:
         taus[c_type, f'd{dim}'] = taus[c_type, dim] - taus[f'tau_{dim}'] # normalising constituent coordinates wrt. tau direction
-
-def _derive_grid_mask(taus, c_type, grid_left, grid_right):
-    grid_eta_mask = (taus[c_type, 'deta'] > grid_left) & (taus[c_type, 'deta'] < grid_right)
-    grid_phi_mask = (taus[c_type, 'dphi'] > grid_left) & (taus[c_type, 'dphi'] < grid_right)
-    return grid_eta_mask * grid_phi_mask
 
 @nb.njit
 def derive_grid_mask(deta, dphi, grid_type, inner_grid_left, inner_grid_right, outer_grid_left, outer_grid_right):
@@ -52,7 +47,6 @@ def sort_constituents_by_var(taus, c_type, var, ascending=True):
 
 def get_lazy_data(path, tree_name, step_size):
     taus = uproot.lazy(f'{path}:{tree_name}', step_size=step_size)
-    # taus = uproot.concatenate(f'{path}:{tree_name}', library='ak')
     return taus
 
 def get_batch_yielder(file_name, tree_name, step_size):
@@ -71,8 +65,6 @@ def get_fill_indices(taus, c_type, grid_type, grid_mask):
 
 def get_fill_values(tau, c_type, branches, grid_mask):
     values_to_fill = ak.to_numpy(tau[c_type, branches][grid_mask]).tolist()
-    # values_to_fill = np.apply_along_axis(lambda v: list(v), 0, values_to_fill)
-    # values_to_fill = [list(v) for v in values_to_fill]
     return values_to_fill
 
 ################################################################################################
@@ -121,7 +113,7 @@ def fill_tensor(file_name, batch_size, constituent_types, fill_branches, grid_ty
         print(f'{i_batch}th batch goes in:')
         for c_type in constituent_types:
             print(f'\n  {c_type} constituents')
-            add_vars_to_taus(taus, c_type) # at the moment minor preprocessing and feature engineering
+            add_vars(taus, c_type) # at the moment minor preprocessing and feature engineering
             sort_constituents_by_var(taus, c_type, 'pt', ascending=True)
             for grid_type in grid_types:
                 print(f'      {grid_type} grid')
