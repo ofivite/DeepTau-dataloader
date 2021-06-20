@@ -55,8 +55,8 @@ def get_lazy_data(path, tree_name, step_size):
     # taus = uproot.concatenate(f'{path}:{tree_name}', library='ak')
     return taus
 
-def get_batch_yielder(path, tree_name, step_size):
-    f = uproot.open(path)
+def get_batch_yielder(file_name, tree_name, step_size):
+    f = uproot.open(file_name)
     batch_yielder = f[tree_name].iterate(library="ak", step_size=step_size, how="zip")
     return batch_yielder
 
@@ -103,7 +103,7 @@ def fill_feature_tensor(tensor_to_fill, i_feature, taus_feature, c_deta, c_dphi,
                 tensor_to_fill[i_tau, i_eta, i_phi, i_feature] = taus_feature[i_tau][i_const]
 
 # @profile
-def fill_tensor(path_to_data, batch_size, n_batches, constituent_types, fill_branches, grid_types, n_cells, cell_size):
+def fill_tensor(file_name, batch_size, constituent_types, fill_branches, grid_types, n_cells, cell_size):
     """
     Main function which loops over
     batches of taus -> types of constituents -> types of grid ->  feature list
@@ -115,7 +115,7 @@ def fill_tensor(path_to_data, batch_size, n_batches, constituent_types, fill_bra
         grid_left[grid_type], grid_right[grid_type] = - grid_size[grid_type] / 2, grid_size[grid_type] / 2
     #
     grid_tensors = {key: {} for key in grid_types} # dictionary to store final tensors
-    batch_yielder = get_batch_yielder(path_to_data, 'taus', batch_size)
+    batch_yielder = get_batch_yielder(file_name, 'taus', batch_size)
     for i_batch, taus in enumerate(batch_yielder):
         print('\n' + 30*'*')
         print(f'{i_batch}th batch goes in:')
@@ -131,6 +131,4 @@ def fill_tensor(path_to_data, batch_size, n_batches, constituent_types, fill_bra
                                         taus[c_type, 'deta'], taus[c_type, 'dphi'], grid_type,
                                         grid_left['inner'], grid_right['inner'], cell_size['inner'],
                                         grid_left['outer'], grid_right['outer'], cell_size['outer'])
-        if (i_batch == n_batches - 1) and (n_batches > 0):
-            break
     return grid_tensors

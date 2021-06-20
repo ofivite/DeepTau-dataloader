@@ -35,7 +35,7 @@ if __name__ == '__main__':
     n_cells = input_cfg['n_cells']
     cell_size = input_cfg['cell_size']
     # get filled tensor
-    grid_tensors = fill_tensor(args.data, args.batch_size, args.n_batches, constituent_types, fill_branches, grid_types, n_cells, cell_size)
+    grid_tensors = fill_tensor(args.data, args.batch_size, constituent_types, fill_branches, grid_types, n_cells, cell_size)
     # # release memory
     # for c_type in constituent_types:
     #     for grid_type in grid_types:
