@@ -12,7 +12,7 @@ import argparse
 import yaml
 from memory_profiler import profile
 
-from dataloader.utils import add_vars_to_taus, sort_constituents_by_var, get_batch_yielder, derive_grid_mask
+from dataloader.utils import add_vars, sort_constituents_by_var, get_batch_yielder, derive_grid_mask
 from dataloader.utils import fill_feature_tensor, fill_tensor
 
 ################################################################################################
